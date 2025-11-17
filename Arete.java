@@ -6,6 +6,9 @@ public class Arete {
     private int distance;
 
     public Arete(Sommet debut, Sommet fin, int distance) {
+
+
+
         this.debut = debut;
         this.fin = fin;
         this.distance = distance;
