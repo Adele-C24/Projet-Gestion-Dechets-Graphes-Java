@@ -1,9 +1,9 @@
-package application;
+package modele.application;
 
-import modele.Graphe;
-import modele.Sommet;
-import algo.Dijkstra;
-import algo.PlusProcheVoisin;
+import modele.modele.Graphe;
+import modele.modele.Sommet;
+import modele.algo.Dijkstra;
+import modele.algo.PlusProcheVoisin;
 import java.util.*;
 
 public class Main {
@@ -138,7 +138,7 @@ public class Main {
         } else {
             System.out.println("Chemin trouvé : " + chemin);
 
-            int distan   ce = 0;
+            int distance = 0;
             System.out.println("\nDÉTAIL DU TRAJET :");
             for (int i = 0; i < chemin.size() - 1; i++) {
                 int segment = graphe.getDistanceEntre(chemin.get(i), chemin.get(i+1));
