@@ -1,5 +1,8 @@
 package modele;
 
+//Représente un sommet dans le graphe
+//Chaque sommet a un nom unique identifiant le carrefour
+
 public class Sommet {
     private String nom;
 

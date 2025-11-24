@@ -5,83 +5,87 @@ import modele.Sommet;
 import modele.Arete;
 import java.util.*;
 
+// Implémente la recherche de chemin eulérien pour les graphes avec 2 sommets impairs
 public class CheminEulerien {
     private Graphe graphe;
-    private GraphEuler graphEuler;
+    private modele.GraphEuler graphEuler;
 
     public CheminEulerien(Graphe graphe) {
         this.graphe = graphe;
-        this.graphEuler = new GraphEuler(graphe);
+        this.graphEuler = new modele.GraphEuler(graphe);
     }
 
-    public List<Sommet> trouverCheminEulerien(Sommet depart) {
-        // Vérifier que le graphe n'est pas vide
-        if (graphe.getSommets().isEmpty()) {
-            System.out.println(" Erreur : le graphe est vide !");
-            return new ArrayList<>();
-        }
+    // Trouve un chemin eulérien dans le graphe
+    // Le chemin commence et se termine aux sommets de degré impair
 
+    public List<Sommet> trouverCheminEulerien(Sommet depart) {
+        System.out.println("\n DÉBUT RECHERCHE DE CHEMIN EULÉRIEN");
+
+        // Vérification des conditions
         if (!graphEuler.admetCheminEulerien()) {
-            System.out.println("Conditions du chemin eulérien non satisfaites !");
+            System.out.println(" Conditions du chemin eulérien non satisfaites !");
             return new ArrayList<>();
         }
 
         List<Sommet> impairs = graphEuler.getSommetsImpairs();
-        Sommet s1 = impairs.get(0);
-        Sommet s2 = impairs.get(1);
+        System.out.println("• Sommets impairs : " + impairs.get(0) + " et " + impairs.get(1));
 
-        System.out.println("Sommets impairs identifiés : " + s1 + " et " + s2);
-
-        // Pour une implémentation simplifiée, on utilise Dijkstra pour créer un chemin
-        System.out.println("Création d'un chemin approximatif...");
-
-        List<Sommet> chemin = new ArrayList<>();
-        chemin.add(depart);
-
-        // Parcours simplifié de tous les sommets
-        Set<Sommet> visites = new HashSet<>();
-        visites.add(depart);
-
-        Sommet courant = depart;
-
-        while (visites.size() < graphe.getSommets().size()) {
-            // Trouver le sommet non visité le plus proche
-            Sommet plusProche = null;
-            int minDistance = Integer.MAX_VALUE;
-
-            for (Sommet voisin : getVoisins(courant)) {
-                if (!visites.contains(voisin)) {
-                    int distance = graphe.getDistanceEntre(courant, voisin);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        plusProche = voisin;
-                    }
-                }
-            }
-
-            if (plusProche != null) {
-                chemin.add(plusProche);
-                visites.add(plusProche);
-                courant = plusProche;
-            } else {
-                // Aucun voisin non visité, terminer
-                break;
-            }
+        // Vérifier que le départ est bien un sommet impair
+        if (!impairs.contains(depart)) {
+            System.out.println(" Attention : le point de départ " + depart + " n'est pas un sommet impair");
+            System.out.println(" Les sommets impairs sont : " + impairs);
         }
 
-        System.out.println("Chemin généré avec " + chemin.size() + " étapes");
-        return chemin;
+        // Dupliquer le plus court chemin entre les deux sommets impairs
+        Sommet autreImpair = impairs.get(0).equals(depart) ? impairs.get(1) : impairs.get(0);
+        System.out.println("• Calcul du plus court chemin vers l'autre sommet impair : " + autreImpair);
+
+        List<Sommet> cheminMinimal = algo.Dijkstra.calculerChemin(graphe, depart, autreImpair);
+        int distanceChemin = algo.Dijkstra.calculerDistanceChemin(graphe, cheminMinimal);
+        System.out.println("✓ Plus court chemin : " + cheminMinimal + " (distance: " + distanceChemin + "m)");
+
+        // Dupliquer les arêtes du chemin minimal
+        System.out.println("• Duplication des arêtes du chemin minimal");
+        Graphe grapheModifie = dupliquerAretesChemin(cheminMinimal);
+
+        // Appliquer Hierholzer sur le graphe modifié
+        algo.Hierholzer hierholzer = new algo.Hierholzer(grapheModifie);
+        List<Sommet> circuit = hierholzer.trouverCycleEulerien(depart);
+
+        System.out.println(" Chemin eulérien trouvé avec " + circuit.size() + " étapes");
+        System.out.println(" Distance ajoutée par duplication : " + distanceChemin + "m");
+
+        return circuit;
     }
 
-    private List<Sommet> getVoisins(Sommet sommet) {
-        List<Sommet> voisins = new ArrayList<>();
+    // Duplique les arêtes d'un chemin pour rendre le graphe eulérien
+    private Graphe dupliquerAretesChemin(List<Sommet> chemin) {
+        // Créer une copie du graphe original
+        Graphe grapheModifie = new Graphe();
+
+        // Recréer toutes les arêtes originales
         for (Arete arete : graphe.getAretes()) {
-            if (arete.getDebut().equals(sommet)) {
-                voisins.add(arete.getFin());
-            } else if (arete.getFin().equals(sommet)) {
-                voisins.add(arete.getDebut());
-            }
+            grapheModifie.ajouterArete(
+                    arete.getDebut().getNom(),
+                    arete.getFin().getNom(),
+                    arete.getDistance(),
+                    arete.getNomRue()
+            );
         }
-        return voisins;
+
+        // Dupliquer chaque arête du chemin
+        for (int i = 0; i < chemin.size() - 1; i++) {
+            Sommet u = chemin.get(i);
+            Sommet v = chemin.get(i + 1);
+            int distance = graphe.getDistanceEntre(u, v);
+            String nomRue = graphe.getNomRueEntre(u, v);
+
+            // Ajouter une arête dupliquée
+            grapheModifie.ajouterArete(u.getNom(), v.getNom(), distance, nomRue + "_dupliquee");
+
+            System.out.println("-> Duplication: " + u + " → " + v + " via " + nomRue + " (" + distance + "m)");
+        }
+
+        return grapheModifie;
     }
 }
